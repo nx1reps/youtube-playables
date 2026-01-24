@@ -174,7 +174,8 @@
     }
   });
   const fa = () => {
-    var a = window.getCurrentSdkUrl();
+    if (typeof window === "undefined") return;
+    var a = window.getCurrentSdkUrl ? window.getCurrentSdkUrl() : null;
     if (a !== null) {
       a = new URL(
         a.origin + a.pathname + "?" + window.getLocationHash().substring(1),
@@ -196,17 +197,20 @@
       }
     }
   };
-  if (!window.loadYTGame) {
-    window.getLocationHash = () => window.location.hash;
-    const a = document.currentScript.src;
-    window.getCurrentSdkUrl = () => (a != "" ? new URL(a) : null);
-    window.loadYTGame = fa;
-    fa();
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    if (!window.loadYTGame) {
+      window.getLocationHash = () => window.location.hash;
+      const a = document.currentScript ? document.currentScript.src : "";
+      window.getCurrentSdkUrl = () => (a != "" ? new URL(a) : null);
+      window.loadYTGame = fa;
+      fa();
+    }
+    window.enableSendingResourceLoadedEvents = true;
   }
-  window.enableSendingResourceLoadedEvents = true; /*
-                                                   Copyright The Closure Library Authors.
-                                                   SPDX-License-Identifier: Apache-2.0
-                                                   */
+  /*
+  Copyright The Closure Library Authors.
+  SPDX-License-Identifier: Apache-2.0
+  */
   var m = this || self;
   function ha(a) {
     var b = typeof a;
@@ -2330,7 +2334,7 @@
   be = I(ce, 2, G, ee);
   var ge = new qc(be, tc(new MessageChannel().port2));
   function W() {
-    var a = window !== window.parent;
+    var a = typeof window !== "undefined" && window !== window.parent;
     he ||= new ie(a);
     if (he.g !== a) {
       throw Error(`MessagingService is already created with isEmbedded=${!a}`);
@@ -2359,8 +2363,11 @@
         H: false,
       });
       a =
-        new URLSearchParams(window.location.hash.substring(1)).get("origin") ||
-        document.referrer;
+        typeof window !== "undefined" && window.location
+          ? new URLSearchParams(window.location.hash.substring(1)).get(
+              "origin",
+            ) || (typeof document !== "undefined" ? document.referrer : "")
+          : "";
       this.channel = new xc(
         wc({
           destination: window.parent,
@@ -2422,7 +2429,7 @@
       );
     }
   };
-  var ne = window !== window.parent;
+  var ne = typeof window !== "undefined" && window !== window.parent;
   var oe = class {
     constructor() {
       this.SDK_VERSION = "1.20250303.0000";
@@ -3136,12 +3143,10 @@
               for (var b = 0; b < a.length; b++) {
                 try {
                   yield a[b].unregister();
-                } catch (c) {
-                }
+                } catch (c) {}
               }
             }
-          } catch (c) {
-          }
+          } catch (c) {}
         }
       })(),
     );
