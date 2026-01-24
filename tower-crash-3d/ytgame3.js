@@ -3130,7 +3130,18 @@
     return l(
       (function* () {
         if (navigator && "serviceWorker" in navigator) {
-          yield navigator.serviceWorker.getRegistration("/");
+          try {
+            var a = yield navigator.serviceWorker.getRegistrations();
+            if (a && Array.isArray(a)) {
+              for (var b = 0; b < a.length; b++) {
+                try {
+                  yield a[b].unregister();
+                } catch (c) {
+                }
+              }
+            }
+          } catch (c) {
+          }
         }
       })(),
     );
