@@ -3,106 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playables Hub</title>
+    <title>NX1 ARCADE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .game-card:hover { transform: translateY(-5px); }
-        body { background: #0f172a; }
+        .game-card { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .game-card:hover { transform: scale(1.05); filter: brightness(1.1); }
+        body { background: #020617; }
+        .red-gradient { background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%); }
     </style>
 </head>
 <body class="text-slate-200 selection:bg-red-500/30">
 
-    <nav class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10 p-4">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+    <nav class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur-md border-b border-white/5 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-2xl font-black italic tracking-tighter text-white">
-                REPO<span class="text-red-500">ARCADE</span>
+                NX1<span class="text-red-600">ARCADE</span>
             </h1>
-            <input type="text" id="search" placeholder="Search 50+ games..." 
-                class="w-full md:w-80 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 outline-none transition">
+            <div class="flex gap-3 w-full md:w-auto">
+                <input type="text" id="search" placeholder="Search 80+ games..." 
+                    class="flex-1 md:w-80 bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-red-600 outline-none transition-all">
+                <button onclick="playRandom()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-red-900/20">
+                    🎲 RANDOM
+                </button>
+            </div>
         </div>
     </nav>
 
-    <header class="max-w-6xl mx-auto pt-12 px-6">
-        <h2 class="text-4xl font-bold text-white mb-2">Available Playables</h2>
-        <p id="game-count" class="text-slate-400">Scanning repository for games...</p>
-    </header>
-
-    <main class="max-w-6xl mx-auto p-6">
-        <div id="game-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <div class="animate-pulse bg-slate-800 h-40 rounded-xl"></div>
-            <div class="animate-pulse bg-slate-800 h-40 rounded-xl"></div>
-            <div class="animate-pulse bg-slate-800 h-40 rounded-xl"></div>
-        </div>
+    <main class="max-w-7xl mx-auto p-6">
+        <div id="game-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            </div>
     </main>
 
     <script>
-        // Since this file lives in the root of your fork:
-        const REPO_PATH = window.location.pathname.replace('index.html', '');
-        let allGames = [];
+        // Full list from your repo
+        const games = [
+            "3d-bolt-master", "3d-bowling", "8-ball-classic", "99-balls-3d", "amaze", 
+            "angry-birds-showdown", "aquapark-io", "archery-world-tour", "attack-hole", 
+            "ball-blast", "balloon-paradise", "basket-battle", "basketball-frvr", 
+            "bazooka-boy", "bolly-beat", "bottle-jump-3d", "bouncemasters", "bowmasters", 
+            "bridge-race", "build-a-queen", "cannon-balls-3d", "carrom-clash", "chess-classic", 
+            "city-smash", "color-burst-3d", "color-match", "color-water-sort-3d", "crossy-road", 
+            "dan-the-man", "dig-deep", "draw-the-line", "fashion-battle", "fill-the-fridge", 
+            "find-the-alien", "flappy dunk", "fork-n-sausage", "freekick-football", "go-escape", 
+            "going-balls", "guess-their-answer", "gym-stack", "harvest-io", "hide-n-seek", 
+            "hill-climb-racing-lite", "kitchen-bazar", "magic-tiles-3", "match-triple-3d", 
+            "maze-speedrun", "mob-control-html5", "mr-racer", "om-nom-run", "pac-man-superfast", 
+            "parking-rush", "pokey-ball", "pou", "race-master-3d", "room-sort", 
+            "royal-towers-medieval-td", "scooter-xtreme", "slice-it-all", "slime-io", 
+            "soccer-dash", "solar-smash", "stacky-dash", "state-io", "stealth-master", 
+            "stick-war-legacy", "supreme-duelist", "sushi-roll", "sword-play", "table-tennis", 
+            "tall-io", "tall-man-run", "texas-holdem", "tiletopia", "tower-crash-3d", 
+            "trivia-crack", "turbo-stars"
+        ];
 
-        async function initHub() {
-            try {
-                // 1. Get repo info from current URL (works on GitHub Pages)
-                // Format: /username/repo-name/
-                const pathParts = window.location.pathname.split('/').filter(p => p);
-                const user = pathParts[0];
-                const repo = pathParts[1];
-
-                // 2. Fetch folder list from GitHub API
-                const response = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/`);
-                const data = await response.json();
-
-                // 3. Filter for directories only (excluding hidden folders)
-                allGames = data
-                    .filter(item => item.type === 'dir' && !item.name.startsWith('.'))
-                    .map(dir => ({
-                        id: dir.name,
-                        name: dir.name.replace(/-/g, ' '), // Prettify name
-                        path: `${dir.name}/index.html`,
-                        thumb: `${dir.name}/screenshot.png`
-                    }));
-
-                document.getElementById('game-count').innerText = `Found ${allGames.length} games in this repository.`;
-                renderGames(allGames);
-
-            } catch (err) {
-                console.error("Failed to load games:", err);
-                document.getElementById('game-grid').innerHTML = `<p class="col-span-full text-red-400">Error loading games. Make sure this is hosted on GitHub Pages.</p>`;
-            }
-        }
-
-        function renderGames(gamesList) {
+        function render(filter = '') {
             const grid = document.getElementById('game-grid');
             grid.innerHTML = '';
 
-            gamesList.forEach(game => {
+            const filtered = games.filter(g => g.toLowerCase().includes(filter.toLowerCase()));
+
+            filtered.forEach(folder => {
+                const cleanName = folder.replace(/-/g, ' ');
                 const card = document.createElement('a');
-                card.href = game.path;
-                card.className = "game-card group relative block bg-slate-800 rounded-xl overflow-hidden border border-slate-700 hover:border-red-500 transition-all duration-300";
+                card.href = `./${folder}/index.html`;
+                card.className = "game-card group bg-slate-900 rounded-2xl overflow-hidden border border-white/5 hover:border-red-600/50 flex flex-col shadow-2xl";
                 
                 card.innerHTML = `
-                    <div class="aspect-square w-full overflow-hidden bg-slate-900">
-                        <img src="${game.thumb}" 
-                             onerror="this.src='https://via.placeholder.com/300?text=${encodeURIComponent(game.name)}'"
+                    <div class="aspect-square overflow-hidden bg-slate-800 relative">
+                        <img src="./${folder}/screenshot.png" 
+                             onerror="this.src='https://via.placeholder.com/400?text=${encodeURIComponent(cleanName)}'"
                              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent opacity-60"></div>
                     </div>
-                    <div class="p-3">
-                        <h3 class="text-sm font-bold truncate text-slate-100 capitalize">${game.name}</h3>
-                        <span class="text-[10px] text-slate-500 uppercase tracking-widest">Play Now →</span>
+                    <div class="p-3 text-center bg-slate-900/50">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-red-500 transition-colors truncate">${cleanName}</h3>
                     </div>
                 `;
                 grid.appendChild(card);
             });
         }
 
-        // Search logic
-        document.getElementById('search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = allGames.filter(g => g.name.toLowerCase().includes(term));
-            renderGames(filtered);
-        });
+        function playRandom() {
+            const random = games[Math.floor(Math.random() * games.length)];
+            window.location.href = `./${random}/index.html`;
+        }
 
-        initHub();
+        document.getElementById('search').addEventListener('input', (e) => render(e.target.value));
+        
+        // Initial Render
+        render();
     </script>
 </body>
 </html>
